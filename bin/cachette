@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+
+## DESCRIPTION: a utility to privately store key-value data
+
+## AUTHOR: Hui Zheng
+
+readonly SCRIPT_SRC="$(readlink -f ${BASH_SOURCE[0]})"
+readonly SCRIPT_NAME=$(basename "$SCRIPT_SRC")
+readonly CUR_DIR="$(dirname $SCRIPT_SRC)"
+readonly PROJECT_DIR="$(dirname $CUR_DIR)"
+readonly PROJECT_NAME="$(basename $PROJECT_DIR)"
+readonly PYTHON_DIR=$PROJECT_DIR/$PROJECT_NAME
+
+## exit the shell(default status code: 1) after printing the message to stderr
+bail() {
+    echo -ne "$1" >&2
+    exit ${2-1}
+} 
+
+is_cmd() {
+    command -v $1 &>/dev/null;
+}
+
+## help message
+declare -r HELP_MSG="Usage: $SCRIPT_NAME [OPTION]... [key [value]]
+  -h      display this help and exit
+
+  -d KEY  delete the data mapped by the key(exact)
+  -D KEY  delete the data mapped by the key(regex)
+  -e      exact key match in data retrieval
+  -f FILE data file's path
+  -n      NOT copy into clipboard in data retrieval
+  -p PWD  password for data encryption
+  -s      show the data in the output(implied by "-n")
+  -t SEC  seconds for data to be kept in the clipboard(default is 10, 0 means forever)
+
+  key     the key used to be retrieved(fuzzy by default) or updated(exact match)
+  value   the new value for the given key
+"
+
+## print the usage and exit the shell(default status code: 2)
+usage() {
+    local status=2
+    if [[ $1 =~ ^[0-9]+$ ]]; then
+        status=$1
+        shift
+    fi
+    bail "${1}$HELP_MSG" $status
+}
+
+keep=10
+copy=true
+show=false
+exact=false
+while getopts ":hd:D:ef:np:st:" opt; do
+    case $opt in
+        h)
+            usage 0;;
+        d)
+            del_key=$OPTARG;;
+        D)
+            del_key_re=$OPTARG;;
+        e)
+            exact=true;;
+        f)
+            cache_file=$OPTARG;;
+        n)
+            copy=false;;
+        p)
+            password=$OPTARG;;
+        s)
+            show=true;;
+        t)
+            keep=$OPTARG;;
+        \?)
+            usage "Invalid option: -$OPTARG \\n";;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+get_pass() {
+    if is_cmd security; then #get password from keychain(MacOS)
+        local cmd="security find-generic-password -g -a $USER -s $PROJECT_NAME"
+        cmd+="|& head -1 | awk '{print substr(\$NF,2,length(\$NF)-2)}'"
+        #NOTE: printf can convert '\134' back to backslash
+        echo $(printf $(eval $cmd))
+    else
+        read -rs -p "Password: " password # '-r' disallow backslash escape
+        echo $password
+    fi
+}
+
+if [[ -z $password ]]; then
+    password=$(get_pass)
+fi
+if [[ -z $password ]]; then
+    bail "password is empty\n"
+fi
+
+#postpone evaluating $password to avoid special characters problem
+cmd="python $PYTHON_DIR -p\"\$password\" "
+
+if [[ $exact = true ]]; then
+    cmd+="-e "
+fi
+if [[ -n $del_key ]]; then
+    cmd+="-d \"$del_key\" "
+elif [[ -n $del_key_re ]]; then
+    cmd+="-D \"$del_key_re\" "
+fi
+
+if [ -z $cache_file ]; then #get cache from environment variable
+    cache_file_var=$(echo $PROJECT_NAME | tr '[:lower:]' '[:upper:]')
+    cache_file=$(eval echo "\$$cache_file_var")
+    if [ -z "$cache_file" ]; then
+        bail "A cache file must be provided either from option '-f'"\
+" or environment variable $cache_file_var\n"
+    fi
+fi
+
+cmd+="$cache_file \"\$@\""
+
+get_copy_cmd() {
+    if is_cmd pbcopy; then #probably Mac OS
+        echo pbcopy
+    elif is_cmd xclip; then #probably Linux
+        echo 'xclip -selection clipboard'
+    elif is_cmd xsel; then #probably Linux
+        echo 'xsel --clipboard --input'
+    elif is_cmd clip; then #Windows
+        echo clip
+    fi
+}
+
+clear_clipboard() {
+    if [[ $1 = clip ]]; then
+        echo | clip
+    else
+        $1 < /dev/null 
+    fi
+}
+
+if [[ $# = 1 ]]; then # fetch data
+    if [[ $show = true && $copy = true ]]; then
+        cmd+="|tee /dev/tty"
+    fi
+
+    if [[ $copy = true ]]; then
+        copy_cmd=$(get_copy_cmd)
+        if [[ -n $copy_cmd ]];then
+            #copy to clipboard
+            cmd+="|"$copy_cmd
+        fi
+    fi
+fi
+eval $cmd
+
+# clear clipboard for safety
+if [[ $keep -gt 0 && -n $copy_cmd ]]; then
+    #echo clearing clipboard in $keep seconds
+    (sleep $keep; clear_clipboard "$copy_cmd")&
+fi
