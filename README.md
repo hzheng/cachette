@@ -41,6 +41,8 @@ and `value` is the new value for the given `key`.
 
 All supported options are listed as follows:
 
+* _-a_        list all matched data
+
 * _-d KEY_    delete the data mapped by the key(exact)
 
 * _-D KEY_     delete the data mapped by the key(regex)
@@ -65,13 +67,21 @@ EXAMPLES
 
     cachette
 
+* List all keys: unsafe):
+
+    cachette -k
+
+* Copy the first(ordered by key) value matched by `key1`(fuzzy) to the system clipboard:
+
+    cachette key1
+
+* List all data matched by `key1`(fuzzy, of course):
+
+    cachette -a key1
+
 * Copy the value matched by `key1`(exact) to the system clipboard:
 
     cachette -e key1
-
-* Copy the value matched by `key1`(fuzzy) to the system clipboard:
-
-    cachette key1
 
 * Copy the value matched by `key1`(fuzzy), keep it in the system clipboard for 1 minute:
 

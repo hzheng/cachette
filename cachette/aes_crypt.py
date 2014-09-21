@@ -23,7 +23,7 @@ from Crypto.Cipher import AES
 BLOCK_SIZE = 32
 
 # the padding character
-PADDING = '\0'
+PADDING_CHAR = '\0'
 
 
 def _create_cipher(password):
@@ -32,23 +32,26 @@ def _create_cipher(password):
 
 def encrypt(plaintext, key):
     cipher = _create_cipher(key)
-    pad = (BLOCK_SIZE - len(plaintext) % BLOCK_SIZE) * PADDING
-    return base64.b64encode(cipher.encrypt(plaintext + pad))
+    leftover = len(plaintext) % BLOCK_SIZE
+    if leftover:
+        plaintext += (BLOCK_SIZE - leftover) * PADDING_CHAR
+    return base64.b64encode(cipher.encrypt(plaintext))
 
 
 def decrypt(ciphertext, key):
     cipher = _create_cipher(key)
-    return cipher.decrypt(base64.b64decode(ciphertext)).rstrip(PADDING)
+    return cipher.decrypt(
+            base64.b64decode(ciphertext)).rstrip(PADDING_CHAR)
 
 
 def encrypt_file(file_obj, key):
-    input = ''.join(file_obj.readlines())
-    return encrypt(input, key)
+    input_str = ''.join(file_obj.readlines())
+    return encrypt(input_str, key)
 
 
 def decrypt_file(file_obj, key):
-    input = ''.join(file_obj.readlines())
-    return decrypt(input, key)
+    input_str = ''.join(file_obj.readlines())
+    return decrypt(input_str, key)
 
 
 def main(argv=None):
@@ -61,16 +64,17 @@ def main(argv=None):
     (options, args) = parser.parse_args(argv)
 
     key = options.password or getpass.getpass("password: ")
-    input = sys.stdin
+    input_file = sys.stdin
     if args:
-        input = open(args[0])
+        input_file = open(args[0])
     try:
         crypt = decrypt_file if options.decrypt else encrypt_file
-        sys.stdout.write(crypt(input, key))
+        sys.stdout.write(crypt(input_file, key))
     finally:
         if args:
-            input.close()
+            input_file.close()
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

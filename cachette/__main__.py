@@ -52,6 +52,16 @@ class Cachette(object):
                     return json_data[k]
             raise KeyError(u"{}(fuzzy)".format(key))
 
+    def retrieve_all_data(self, key):
+        json_data = {}
+        with open(self._cache_file) as f:
+            decrypted = decrypt_file(f, self._password)
+            json_data = json.loads(decrypted)
+        for k in sorted(json_data):
+            pattern = ".*".join([c for c in key])
+            if re.search(pattern, k):
+                yield k, json_data[k]
+
     def _update_data(self, process_data):
         with open(self._cache_file, 'r+') as f:
             decrypted = decrypt_file(f, self._password)
@@ -86,7 +96,7 @@ class Cachette(object):
                     found = True
                     del data[k]
             if not found:
-                raise KeyError("{}(regex)".format(key_re))
+                raise KeyError(u"{}(regex)".format(key_re))
 
         self._update_data(process_data)
 
@@ -106,17 +116,22 @@ def decode_args(args, options):
             setattr(options, attr, value.decode(ENCODING))
     return [arg.decode(ENCODING) for arg in args]
 
+
 def main(argv=None):
     from optparse import OptionParser
     usage = "usage: %prog [options] cache_file [key [value]]"
     parser = OptionParser(usage)
-    parser.add_option("-p", dest="password", help="password")
+    parser.add_option("-a", action="store_true", default=False,
+            dest="all_matched", help="show all matched data")
     parser.add_option("-d", dest="del_key",
             help="delete data mapped by the key")
     parser.add_option("-D", dest="del_key_re",
             help="delete data mapped by the key regex")
     parser.add_option("-e", action="store_true", default=False,
             dest="exact", help="exact key match")
+    parser.add_option("-k", action="store_true", default=False,
+            dest="key_only", help="only show keys")
+    parser.add_option("-p", dest="password", help="password")
     (options, args) = parser.parse_args(argv)
     args = decode_args(args, options)
 
@@ -129,23 +144,31 @@ def main(argv=None):
     password = options.password or getpass.getpass("password: ")
     cachette = Cachette(args[0], password)
     try:
-        if arg_len == 1: # delete matched data or list all data
+        if arg_len == 1: # delete matched data or list all data or keys
             if options.del_key:
                 cachette.del_data(options.del_key)
             elif options.del_key_re:
                 cachette.del_data_re(options.del_key_re)
+            elif options.key_only:
+                for key in cachette.list_all_data():
+                    sys.stdout.write("{}\n".format(encode(key)))
             else:
-                data = cachette.list_all_data()
-                for key, value in sorted(data.items()):
-                    sys.stdout.write("{} -> {}\n".format(encode(key), encode(value)))
+                for key, value in cachette.list_all_data().items():
+                    sys.stdout.write("{} -> {}\n".format(
+                        encode(key), encode(value)))
         elif arg_len == 2: # fetch one item
             cache_file, key = args
-            data = cachette.retrieve_data(key, options.exact)
-            if data:
-                sys.stdout.write("{}".format(encode(data)))
+            if options.all_matched:
+                for (key, value) in cachette.retrieve_all_data(key):
+                    sys.stdout.write("{} -> {}\n".format(
+                        encode(key), encode(value)))
             else:
-                sys.stderr.write("no matched data\n")
-                return 1
+                data = cachette.retrieve_data(key, options.exact)
+                if data:
+                    sys.stdout.write("{}".format(encode(data)))
+                else:
+                    sys.stderr.write("no matched data\n")
+                    return 1
         else: # (arg_len == 3) update one item
             cache_file, key, value = args
             cachette.update_data(key, value)
@@ -157,6 +180,7 @@ def main(argv=None):
         return 1
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

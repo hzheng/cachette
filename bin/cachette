@@ -25,10 +25,12 @@ is_cmd() {
 declare -r HELP_MSG="Usage: $SCRIPT_NAME [OPTION]... [key [value]]
   -h      display this help and exit
 
+  -a      list all matched data(no copy)
   -d KEY  delete the data mapped by the key(exact)
   -D KEY  delete the data mapped by the key(regex)
   -e      exact key match in data retrieval
   -f FILE data file's path
+  -k      list all keys
   -n      NOT copy into clipboard in data retrieval
   -p PWD  password for data encryption
   -s      show the data in the output(implied by "-n")
@@ -52,8 +54,11 @@ keep=10
 copy=true
 show=false
 exact=false
-while getopts ":hd:D:ef:np:st:" opt; do
+while getopts ":had:D:ef:knp:st:" opt; do
     case $opt in
+        a)
+            all_matched=true
+            copy=false;;
         h)
             usage 0;;
         d)
@@ -64,6 +69,8 @@ while getopts ":hd:D:ef:np:st:" opt; do
             exact=true;;
         f)
             cache_file=$OPTARG;;
+        k)
+            key_only=true;;
         n)
             copy=false;;
         p)
@@ -101,6 +108,12 @@ fi
 #postpone evaluating $password to avoid special characters problem
 cmd="python $PYTHON_DIR -p\"\$password\" "
 
+if [[ $all_matched = true ]]; then
+    cmd+="-a "
+fi
+if [[ $key_only = true ]]; then
+    cmd+="-k "
+fi
 if [[ $exact = true ]]; then
     cmd+="-e "
 fi
