@@ -27,7 +27,8 @@ For safety, the clipboard containing the sensitive data will be cleared in 10 se
 
 Without doubt, all data are encrypted by [AES](http://en.wikipedia.org/wiki/Advanced_Encryption_Standard).
 
-As for password, Mac OS users can store one in Keychain(make sure its service name is `cachette`).
+As for password, Mac OS users can store one in Keychain(make sure its account name
+is the current user name and its service name is `cachette`).
 Unfortunately, Linux or Windows' users will have to type a password manually(which is
 inconvenient), or pass a password as an option(which is unsafe).
 

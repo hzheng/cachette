@@ -93,9 +93,15 @@ shift $(($OPTIND - 1))
 
 get_pass() {
     if is_cmd security; then #get password from keychain(MacOS)
-        local cmd="security find-generic-password -g -a $USER -s $PROJECT_NAME"
-        cmd+="|& head -1 | awk '{print substr(\$NF,2,length(\$NF)-2)}'"
+        local cmd="security find-generic-password -g -a $USER -s $PROJECT_NAME|& head -1"
+        local result=$(eval $cmd)
+        if [[ ! $result =~ ^password ]]; then
+            bail "please save a password with account name as \"$USER"\"\
+" and service name as \"${PROJECT_NAME}\" in keychain\n"
+        fi
+        cmd="echo \$result | awk '{print substr(\$NF,2,length(\$NF)-2)}'"
         #NOTE: printf can convert '\134' back to backslash
+        #      add '\' before $result to delay evaluation($result may have quotes)
         echo $(printf $(eval $cmd))
     else
         read -rs -p "Password: " password # '-r' disallow backslash escape
@@ -104,7 +110,7 @@ get_pass() {
 }
 
 if [[ -z $password ]]; then
-    password=$(get_pass)
+    password=$(get_pass) || exit
 fi
 if [[ -z $password ]]; then
     bail "password is empty\n"
