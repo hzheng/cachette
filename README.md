@@ -45,19 +45,19 @@ All supported options are listed as follows:
 
 * _-d KEY_    delete the data mapped by the key(exact)
 
-* _-D KEY_     delete the data mapped by the key(regex)
+* _-D KEY_    delete the data mapped by the key(regex)
 
 * _-e_        exact key match in data retrieval
 
-* _-f FILE_    data file's path(default file is set by environment variable `CACHETTE`)
+* _-f FILE_   data file's path(default file is set by environment variable `CACHETTE`)
 
 * _-n_        NOT copy into clipboard in data retrieval(imply "-s")
 
-* _-p PWD_     password for data encryption
+* _-p PWD_    password for data encryption
 
-* _-s_        show the data in the output
+* _-s_        write the data to the stdout in addition to clipboard
 
-* _-t SEC_     seconds for data to be kept in the clipboard(default is 10, 0 means forever)
+* _-t SEC_    seconds for data to be kept in the clipboard(default is 10, 0 means forever)
 
 
 EXAMPLES

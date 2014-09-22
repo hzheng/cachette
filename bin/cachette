@@ -23,21 +23,21 @@ is_cmd() {
 
 ## help message
 declare -r HELP_MSG="Usage: $SCRIPT_NAME [OPTION]... [key [value]]
-  -h      display this help and exit
+  -h             display this help and exit
 
-  -a      list all matched data(no copy)
-  -d KEY  delete the data mapped by the key(exact)
-  -D KEY  delete the data mapped by the key(regex)
-  -e      exact key match in data retrieval
-  -f FILE data file's path
-  -k      list all keys
-  -n      NOT copy into clipboard in data retrieval
-  -p PWD  password for data encryption
-  -s      show the data in the output(implied by "-n")
-  -t SEC  seconds for data to be kept in the clipboard(default is 10, 0 means forever)
-
-  key     the key used to be retrieved(fuzzy by default) or updated(exact match)
-  value   the new value for the given key
+  -a             list all matched data(no copy)
+  -c COMMENT     attach comments
+  -d KEY         delete the data mapped by the key(exact)
+  -D KEY         delete the data mapped by the key(regex)
+  -e             exact key match in data retrieval
+  -f FILE        data file's path
+  -k             list all keys
+  -n             NOT copy into clipboard in data retrieval
+  -p PWD         password for data encryption
+  -s             show the data in the output(implied by "-n")
+  -t SEC         seconds for data to be kept in the clipboard(default is 10, 0 means forever)
+  key            the key used to be retrieved(fuzzy by default) or updated(exact match)
+  value          the new value for the given key
 "
 
 ## print the usage and exit the shell(default status code: 2)
@@ -54,13 +54,15 @@ keep=10
 copy=true
 show=false
 exact=false
-while getopts ":had:D:ef:knp:st:" opt; do
+while getopts ":hac:d:D:ef:knp:st:" opt; do
     case $opt in
         a)
             all_matched=true
             copy=false;;
         h)
             usage 0;;
+        c)
+            comment=$OPTARG;;
         d)
             del_key=$OPTARG;;
         D)
@@ -116,6 +118,9 @@ if [[ $key_only = true ]]; then
 fi
 if [[ $exact = true ]]; then
     cmd+="-e "
+fi
+if [[ -n $comment ]]; then
+    cmd+="-c \"$comment\" "
 fi
 if [[ -n $del_key ]]; then
     cmd+="-d \"$del_key\" "

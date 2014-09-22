@@ -28,8 +28,8 @@ class Cachette(object):
         self._cache_file = cache_file
         self._password = password
 
-        if os.path.getsize(cache_file) < 2:
-            # initialize an empty file
+        if not os.path.isfile(cache_file) or os.path.getsize(cache_file) < 2:
+            # initialize a non-existent or an nearly-empty file
             with open(cache_file, 'w') as f:
                 f.write(encrypt("{}", password))
 
@@ -73,10 +73,10 @@ class Cachette(object):
             f.truncate()
             f.write(encrypted)
 
-    def update_data(self, key, value):
+    def update_data(self, key, value, comment=None):
 
         def process_data(data):
-            data[key] = value
+            data[key] = (value, comment)
 
         self._update_data(process_data)
 
@@ -104,9 +104,14 @@ class Cachette(object):
 ENCODING = sys.stdin.encoding or "UTF-8"
 
 
-def encode(unicode_str):
-    """Encode the given unicode as stdin's encoding"""
-    return unicode_str.encode(ENCODING)
+def encode(unicode_val):
+    """Encode the given unicode string as stdin's encoding"""
+    if unicode_val is None:
+        return None
+    if isinstance(unicode_val, basestring):
+        return unicode_val.encode(ENCODING)
+    else: # assume iterable
+        return map(encode, unicode_val)
 
 
 def decode_args(args, options):
@@ -117,12 +122,22 @@ def decode_args(args, options):
     return [arg.decode(ENCODING) for arg in args]
 
 
+def print_data_set(data):
+    if isinstance(data, dict):
+        data = data.items()
+    for key, (value, comment) in data:
+        sys.stdout.write("{} -> {}".format(encode(key), encode(value)))
+        if comment:
+            sys.stdout.write(" \t#{}".format(encode(comment)))
+        sys.stdout.write("\n")
+
 def main(argv=None):
     from optparse import OptionParser
     usage = "usage: %prog [options] cache_file [key [value]]"
     parser = OptionParser(usage)
     parser.add_option("-a", action="store_true", default=False,
             dest="all_matched", help="show all matched data")
+    parser.add_option("-c", dest="comment", help="comment")
     parser.add_option("-d", dest="del_key",
             help="delete data mapped by the key")
     parser.add_option("-D", dest="del_key_re",
@@ -153,25 +168,21 @@ def main(argv=None):
                 for key in cachette.list_all_data():
                     sys.stdout.write("{}\n".format(encode(key)))
             else:
-                for key, value in cachette.list_all_data().items():
-                    sys.stdout.write("{} -> {}\n".format(
-                        encode(key), encode(value)))
+                print_data_set(cachette.list_all_data())
         elif arg_len == 2: # fetch one item
             cache_file, key = args
             if options.all_matched:
-                for (key, value) in cachette.retrieve_all_data(key):
-                    sys.stdout.write("{} -> {}\n".format(
-                        encode(key), encode(value)))
+                print_data_set(cachette.retrieve_all_data(key))
             else:
                 data = cachette.retrieve_data(key, options.exact)
                 if data:
-                    sys.stdout.write("{}".format(encode(data)))
+                    sys.stdout.write("{}".format(encode(data[0])))
                 else:
                     sys.stderr.write("no matched data\n")
                     return 1
         else: # (arg_len == 3) update one item
             cache_file, key, value = args
-            cachette.update_data(key, value)
+            cachette.update_data(key, value, options.comment)
     except ValueError:
         sys.stderr.write("wrong password or corrupted data\n")
         return 1
