@@ -122,14 +122,22 @@ def decode_args(args, options):
     return [arg.decode(ENCODING) for arg in args]
 
 
-def print_data_set(data):
+def print_data_set(data, style=False):
+    key_color = '\033[95m' if style else '' #purple
+    val_color = '\033[94m' if style else '' # blue
+    cmt_color = '\033[92m' if style else '' #green
+    end_color = '\033[0m' if style else ''
+
     if isinstance(data, dict):
         data = data.items()
     for key, (value, comment) in data:
-        sys.stdout.write("{} -> {}".format(encode(key), encode(value)))
+        sys.stdout.write("{}{:>30s}{} => {}{}{}".format(key_color, encode(key),
+            end_color, val_color, encode(value), end_color))
         if comment:
-            sys.stdout.write(" \t#{}".format(encode(comment)))
+            sys.stdout.write(" {}{{{}}}{}".format(
+                cmt_color, encode(comment), end_color))
         sys.stdout.write("\n")
+
 
 def main(argv=None):
     from optparse import OptionParser
@@ -147,6 +155,8 @@ def main(argv=None):
     parser.add_option("-k", action="store_true", default=False,
             dest="key_only", help="only show keys")
     parser.add_option("-p", dest="password", help="password")
+    parser.add_option("-S", action="store_true", default=False,
+            dest="style", help="stylize output")
     (options, args) = parser.parse_args(argv)
     args = decode_args(args, options)
 
@@ -168,11 +178,11 @@ def main(argv=None):
                 for key in cachette.list_all_data():
                     sys.stdout.write("{}\n".format(encode(key)))
             else:
-                print_data_set(cachette.list_all_data())
+                print_data_set(cachette.list_all_data(), options.style)
         elif arg_len == 2: # fetch one item
-            cache_file, key = args
+            key = args[1]
             if options.all_matched:
-                print_data_set(cachette.retrieve_all_data(key))
+                print_data_set(cachette.retrieve_all_data(key), options.style)
             else:
                 data = cachette.retrieve_data(key, options.exact)
                 if data:
@@ -181,7 +191,7 @@ def main(argv=None):
                     sys.stderr.write("no matched data\n")
                     return 1
         else: # (arg_len == 3) update one item
-            cache_file, key, value = args
+            __, key, value = args
             cachette.update_data(key, value, options.comment)
     except ValueError:
         sys.stderr.write("wrong password or corrupted data\n")

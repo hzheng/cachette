@@ -35,6 +35,7 @@ declare -r HELP_MSG="Usage: $SCRIPT_NAME [OPTION]... [key [value]]
   -n             NOT copy into clipboard in data retrieval
   -p PWD         password for data encryption
   -s             show the data in the output(implied by "-n")
+  -S             stylize the output(for list only)
   -t SEC         seconds for data to be kept in the clipboard(default is 10, 0 means forever)
   key            the key used to be retrieved(fuzzy by default) or updated(exact match)
   value          the new value for the given key
@@ -54,7 +55,7 @@ keep=10
 copy=true
 show=false
 exact=false
-while getopts ":hac:d:D:ef:knp:st:" opt; do
+while getopts ":hac:d:D:ef:knp:sSt:" opt; do
     case $opt in
         a)
             all_matched=true
@@ -79,6 +80,8 @@ while getopts ":hac:d:D:ef:knp:st:" opt; do
             password=$OPTARG;;
         s)
             show=true;;
+        S)
+            style=true;;
         t)
             keep=$OPTARG;;
         \?)
@@ -118,6 +121,9 @@ if [[ $key_only = true ]]; then
 fi
 if [[ $exact = true ]]; then
     cmd+="-e "
+fi
+if [[ $style = true ]]; then
+    cmd+="-S "
 fi
 if [[ -n $comment ]]; then
     cmd+="-c \"$comment\" "

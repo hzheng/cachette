@@ -43,6 +43,8 @@ All supported options are listed as follows:
 
 * _-a_        list all matched data
 
+* _-c CMT_    attach comments
+
 * _-d KEY_    delete the data mapped by the key(exact)
 
 * _-D KEY_    delete the data mapped by the key(regex)
@@ -57,6 +59,8 @@ All supported options are listed as follows:
 
 * _-s_        write the data to the stdout in addition to clipboard
 
+* _-S_        stylize the output(for list only)
+
 * _-t SEC_    seconds for data to be kept in the clipboard(default is 10, 0 means forever)
 
 
@@ -67,7 +71,7 @@ EXAMPLES
 
     cachette
 
-* List all keys: unsafe):
+* List all keys:
 
     cachette -k
 
@@ -102,6 +106,10 @@ EXAMPLES
 * Map `key1` to the `value1`:
 
     cachette key1 value1
+
+* Map `key1` to the `value1` with a given comment:
+
+    cachette key1 value1 -c"this is a comment"
 
 
 * Delete the data mapped by `key1`:
