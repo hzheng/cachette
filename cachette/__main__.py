@@ -68,7 +68,7 @@ class Cachette(object):
             json_data = json.loads(decrypted)
             process_data(json_data)
             encrypted = encrypt(
-                    json.dumps(json_data), self._password)
+                json.dumps(json_data), self._password)
             f.seek(0)
             f.truncate()
             f.write(encrypted)
@@ -110,7 +110,7 @@ def encode(unicode_val):
         return None
     if isinstance(unicode_val, basestring):
         return unicode_val.encode(ENCODING)
-    else: # assume iterable
+    else:  # assume iterable
         return map(encode, unicode_val)
 
 
@@ -123,16 +123,17 @@ def decode_args(args, options):
 
 
 def print_data_set(data, style=False):
-    key_color = '\033[95m' if style else '' #purple
-    val_color = '\033[94m' if style else '' # blue
-    cmt_color = '\033[92m' if style else '' #green
+    key_color = '\033[95m' if style else ''  # purple
+    val_color = '\033[94m' if style else ''  # blue
+    cmt_color = '\033[92m' if style else ''  # green
     end_color = '\033[0m' if style else ''
 
     if isinstance(data, dict):
         data = data.items()
     for key, (value, comment) in data:
-        sys.stdout.write("{}{:>30s}{} => {}{}{}".format(key_color, encode(key),
-            end_color, val_color, encode(value), end_color))
+        sys.stdout.write("{}{:>30s}{} => {}{}{}".format(
+            key_color, encode(key), end_color, val_color,
+            encode(value), end_color))
         if comment:
             sys.stdout.write(" {}{{{}}}{}".format(
                 cmt_color, encode(comment), end_color))
@@ -144,19 +145,19 @@ def main(argv=None):
     usage = "usage: %prog [options] cache_file [key [value]]"
     parser = OptionParser(usage)
     parser.add_option("-a", action="store_true", default=False,
-            dest="all_matched", help="show all matched data")
+                      dest="all_matched", help="show all matched data")
     parser.add_option("-c", dest="comment", help="comment")
     parser.add_option("-d", dest="del_key",
-            help="delete data mapped by the key")
+                      help="delete data mapped by the key")
     parser.add_option("-D", dest="del_key_re",
-            help="delete data mapped by the key regex")
+                      help="delete data mapped by the key regex")
     parser.add_option("-e", action="store_true", default=False,
-            dest="exact", help="exact key match")
+                      dest="exact", help="exact key match")
     parser.add_option("-k", action="store_true", default=False,
-            dest="key_only", help="only show keys")
+                      dest="key_only", help="only show keys")
     parser.add_option("-p", dest="password", help="password")
     parser.add_option("-S", action="store_true", default=False,
-            dest="style", help="stylize output")
+                      dest="style", help="stylize output")
     (options, args) = parser.parse_args(argv)
     args = decode_args(args, options)
 
@@ -169,7 +170,7 @@ def main(argv=None):
     password = options.password or getpass.getpass("password: ")
     cachette = Cachette(args[0], password)
     try:
-        if arg_len == 1: # delete matched data or list all data or keys
+        if arg_len == 1:  # delete matched data or list all data or keys
             if options.del_key:
                 cachette.del_data(options.del_key)
             elif options.del_key_re:
@@ -179,7 +180,7 @@ def main(argv=None):
                     sys.stdout.write("{}\n".format(encode(key)))
             else:
                 print_data_set(cachette.list_all_data(), options.style)
-        elif arg_len == 2: # fetch one item
+        elif arg_len == 2:  # fetch one item
             key = args[1]
             if options.all_matched:
                 print_data_set(cachette.retrieve_all_data(key), options.style)
@@ -190,7 +191,7 @@ def main(argv=None):
                 else:
                     sys.stderr.write("no matched data\n")
                     return 1
-        else: # (arg_len == 3) update one item
+        else:  # (arg_len == 3) update one item
             __, key, value = args
             cachette.update_data(key, value, options.comment)
     except ValueError:

@@ -41,7 +41,7 @@ def encrypt(plaintext, key):
 def decrypt(ciphertext, key):
     cipher = _create_cipher(key)
     return cipher.decrypt(
-            base64.b64decode(ciphertext)).rstrip(PADDING_CHAR)
+        base64.b64decode(ciphertext)).rstrip(PADDING_CHAR)
 
 
 def encrypt_file(file_obj, key):
@@ -59,7 +59,7 @@ def main(argv=None):
     usage = "usage: %prog [options] [input_file]"
     parser = OptionParser(usage)
     parser.add_option("-d", action="store_true",
-            dest="decrypt", help="decrypt")
+                      dest="decrypt", help="decrypt")
     parser.add_option("-p", dest="password", help="password")
     (options, args) = parser.parse_args(argv)
 
