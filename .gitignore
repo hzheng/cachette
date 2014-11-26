@@ -1,6 +1,12 @@
 TODO
 tmp
+build
+dist
+
 *.pyc
+*.egg-info
+*.egg
 
 *.sublime-project
 *.sublime-workspace
+.coverage

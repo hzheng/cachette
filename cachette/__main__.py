@@ -29,7 +29,7 @@ class Cachette(object):
         self._password = password
 
         if not os.path.isfile(cache_file) or os.path.getsize(cache_file) < 2:
-            # initialize a non-existent or an nearly-empty file
+            # initialize a non-existent or a nearly-empty file
             with open(cache_file, 'w') as f:
                 f.write(encrypt("{}", password))
 
