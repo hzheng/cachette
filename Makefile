@@ -27,7 +27,7 @@ check: $(BASIC_CHECKS)
 check-all: $(ALL_CHECKS)
 
 $(TEST_TARGETS): % : $(TEST_DIR)/%.py
-	py.test -s $<
+	py.test -svv $<
 
 test: $(TEST_TARGETS)
 
@@ -38,7 +38,7 @@ test-xml:
 	@mkdir -p $(BUILD_DIR)
 	@python setup.py test -v -r xml
 
-sonar: test-report
+sonar: test-xml
 	@sonar-runner
 
 build:
