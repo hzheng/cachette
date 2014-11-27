@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Test utilities.
+Test crypt functionalities.
 """
 
 from cachette.aes_crypt import encrypt, decrypt, encrypt_file, decrypt_file
@@ -17,7 +17,7 @@ plain_cipher_pairs = [
 ]
 
 
-def test_crypt_str(tmpdir):
+def test_crypt_str():
     for key, plain, cipher in plain_cipher_pairs:
         assert encrypt(plain, key) == cipher
         assert decrypt(cipher, key) == plain
